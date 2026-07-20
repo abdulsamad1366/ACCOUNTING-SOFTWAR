@@ -17,6 +17,7 @@
   "build": {
     "appId": "com.vyapar.accounting",
     "productName": "Vyapar Accounting Software",
+    "npmRebuild": false,
     "directories": {
       "output": "dist_installer"
     },

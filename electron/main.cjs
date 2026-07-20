@@ -1,7 +1,9 @@
 const { app, BrowserWindow } = require('electron');
 const path = require('path');
+const { initSchema } = require('./database/schema.cjs');
+const { seedDatabase } = require('./database/seed.cjs');
+const { closeDb } = require('./database/connection.cjs');
 const { registerIpcHandlers } = require('./ipc/index.cjs');
-const authService = require('./services/AuthService.cjs');
 
 let mainWindow;
 
@@ -33,15 +35,24 @@ function createWindow() {
 
 app.whenReady().then(async () => {
   try {
-    await authService.ensureAdminUser();
+    // 1. Initialize SQLite Database Schema & Create Tables
+    initSchema();
+
+    // 2. Seed Default Business Profile & Admin User
+    seedDatabase();
   } catch (err) {
     console.error('Database initialization warning:', err);
   }
+
   createWindow();
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });
+});
+
+app.on('before-quit', () => {
+  closeDb();
 });
 
 app.on('window-all-closed', () => {
