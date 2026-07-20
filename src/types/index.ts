@@ -54,6 +54,8 @@ export interface Party {
   address?: string;
   city?: string;
   state?: string;
+  pincode?: string;
+  stateCode?: string;
   creditLimit: number;
   balance: number; // Positive = Receive (+), Negative = Pay (-)
   createdDate: string;

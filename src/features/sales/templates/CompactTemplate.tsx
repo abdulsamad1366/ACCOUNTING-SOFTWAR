@@ -6,6 +6,7 @@ interface TemplateProps {
   invoice: Invoice;
   company: Company;
   party?: Party;
+  copyLabel?: string;
 }
 
 export const CompactTemplate: React.FC<TemplateProps> = ({ invoice, company, party }) => {

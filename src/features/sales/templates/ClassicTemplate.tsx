@@ -6,28 +6,36 @@ interface TemplateProps {
   invoice: Invoice;
   company: Company;
   party?: Party;
+  copyLabel?: string;
 }
 
-export const ClassicTemplate: React.FC<TemplateProps> = ({ invoice, company, party }) => {
+export const ClassicTemplate: React.FC<TemplateProps> = ({
+  invoice,
+  company,
+  party,
+  copyLabel = 'ORIGINAL FOR RECIPIENT',
+}) => {
   return (
     <div className="bg-white p-6 rounded-none border-2 border-slate-900 text-slate-900 font-serif space-y-4">
       {/* Title Header Box */}
-      <div className="border-b-2 border-slate-900 text-center pb-2">
+      <div className="border-b-2 border-slate-900 text-center pb-2 relative">
         <h1 className="text-xl font-bold tracking-widest uppercase">TAX INVOICE</h1>
-        <p className="text-[10px] text-slate-600 font-sans uppercase">Original for Recipient</p>
+        <span className="absolute right-0 top-0 text-[10px] font-sans font-bold uppercase border border-slate-900 px-1.5 py-0.5 bg-slate-100">
+          {copyLabel}
+        </span>
       </div>
 
       {/* Seller & Buyer Box */}
       <div className="grid grid-cols-2 border border-slate-900 text-xs">
-        <div className="p-3 border-r border-slate-900 space-y-1">
+        <div className="p-3 border-r border-slate-900 space-y-1 font-sans">
           <span className="font-bold uppercase text-[10px] text-slate-500 block">Seller Details</span>
-          <h2 className="font-bold text-sm uppercase">{company.name}</h2>
+          <h2 className="font-bold text-sm uppercase font-serif">{company.name}</h2>
           <p>{company.address}, {company.city}, {company.state} - {company.pincode}</p>
           <p>Phone: {company.phone}</p>
           <p className="font-mono font-bold">GSTIN: {company.gstin}</p>
         </div>
 
-        <div className="p-3 space-y-1">
+        <div className="p-3 space-y-1 font-sans">
           <div className="flex justify-between">
             <span className="font-bold uppercase text-[10px] text-slate-500">Invoice Details</span>
             <span className="font-mono font-bold text-sm">#{invoice.invoiceNumber}</span>

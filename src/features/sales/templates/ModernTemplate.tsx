@@ -7,9 +7,15 @@ interface TemplateProps {
   invoice: Invoice;
   company: Company;
   party?: Party;
+  copyLabel?: string;
 }
 
-export const ModernTemplate: React.FC<TemplateProps> = ({ invoice, company, party }) => {
+export const ModernTemplate: React.FC<TemplateProps> = ({
+  invoice,
+  company,
+  party,
+  copyLabel = 'ORIGINAL FOR RECIPIENT',
+}) => {
   return (
     <div className="bg-white p-8 rounded-2xl border border-slate-300 shadow-xl text-slate-900 font-sans space-y-6">
       {/* Top Banner */}
@@ -25,9 +31,14 @@ export const ModernTemplate: React.FC<TemplateProps> = ({ invoice, company, part
         </div>
 
         <div className="text-right">
-          <span className="inline-block px-3 py-1 bg-blue-100 text-blue-800 font-black text-xs rounded-full uppercase tracking-wider">
-            TAX INVOICE
-          </span>
+          <div className="flex items-center space-x-1 justify-end mb-1">
+            <span className="inline-block px-3 py-1 bg-blue-100 text-blue-800 font-black text-xs rounded-full uppercase tracking-wider">
+              TAX INVOICE
+            </span>
+            <span className="inline-block px-2 py-0.5 bg-slate-100 text-slate-800 font-bold text-[10px] rounded uppercase">
+              {copyLabel}
+            </span>
+          </div>
           <p className="text-sm font-bold text-slate-900 mt-1">
             Bill No: <span className="font-mono text-blue-700">{invoice.invoiceNumber}</span>
           </p>
