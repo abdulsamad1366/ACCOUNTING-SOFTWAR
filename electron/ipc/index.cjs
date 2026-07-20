@@ -1,13 +1,13 @@
 const { ipcMain, dialog } = require('electron');
 const fs = require('fs');
-const companyService = require('../services/CompanyService');
-const partyService = require('../services/PartyService');
-const productService = require('../services/ProductService');
-const invoiceService = require('../services/InvoiceService');
-const voucherService = require('../services/VoucherService');
-const reportService = require('../services/ReportService');
-const backupService = require('../services/BackupService');
-const authService = require('../services/AuthService');
+const companyService = require('../services/CompanyService.cjs');
+const partyService = require('../services/PartyService.cjs');
+const productService = require('../services/ProductService.cjs');
+const invoiceService = require('../services/InvoiceService.cjs');
+const voucherService = require('../services/VoucherService.cjs');
+const reportService = require('../services/ReportService.cjs');
+const backupService = require('../services/BackupService.cjs');
+const authService = require('../services/AuthService.cjs');
 
 function registerIpcHandlers(mainWindow) {
   // --- Auth IPC ---

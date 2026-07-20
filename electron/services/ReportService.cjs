@@ -1,4 +1,4 @@
-const { getPrismaClient } = require('../database/client');
+const { getPrismaClient } = require('../database/client.cjs');
 
 class ReportService {
   async getFinancialSummary() {
@@ -12,27 +12,21 @@ class ReportService {
     const products = await prisma.product.findMany();
     const parties = await prisma.party.findMany();
 
-    // Sales Calculations
     const salesInvoices = invoices.filter((i) => i.type === 'SALES');
     const totalSalesTaxable = salesInvoices.reduce((sum, i) => sum + i.subtotal, 0);
     const totalSalesGST = salesInvoices.reduce((sum, i) => sum + i.cgstTotal + i.sgstTotal + i.igstTotal, 0);
 
-    // Purchase Calculations
     const purchaseInvoices = invoices.filter((i) => i.type === 'PURCHASE');
     const totalPurchasesCost = purchaseInvoices.reduce((sum, i) => sum + i.subtotal, 0);
 
-    // Expense Calculations
     const expenseVouchers = vouchers.filter((v) => v.type === 'EXPENSE');
     const totalExpenses = expenseVouchers.reduce((sum, v) => sum + v.amount, 0);
 
-    // Profit Metrics
     const grossProfit = totalSalesTaxable - totalPurchasesCost;
     const netProfit = grossProfit - totalExpenses;
 
-    // Stock Valuation
     const totalStockValuation = products.reduce((sum, p) => sum + p.currentStock * p.purchasePrice, 0);
 
-    // Receivables & Payables
     const totalReceivables = parties.filter((p) => p.balance > 0).reduce((sum, p) => sum + p.balance, 0);
     const totalPayables = parties.filter((p) => p.balance < 0).reduce((sum, p) => sum + Math.abs(p.balance), 0);
 

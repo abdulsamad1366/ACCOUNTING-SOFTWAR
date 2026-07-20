@@ -1,4 +1,4 @@
-const { getPrismaClient } = require('../database/client');
+const { getPrismaClient } = require('../database/client.cjs');
 
 class VoucherService {
   async getVouchers(type) {
@@ -25,7 +25,6 @@ class VoucherService {
     const amount = Number(data.amount) || 0;
 
     return await prisma.$transaction(async (tx) => {
-      // 1. Create Voucher Record
       const voucher = await tx.voucher.create({
         data: {
           voucherNumber,
@@ -41,10 +40,7 @@ class VoucherService {
         },
       });
 
-      // 2. Update Party Balance if applicable
       if (data.partyId) {
-        // PAYMENT_IN reduces receivable balance (-)
-        // PAYMENT_OUT increases receivable / reduces payable (+)
         const delta = type === 'PAYMENT_IN' ? -amount : type === 'PAYMENT_OUT' ? amount : 0;
         if (delta !== 0) {
           await tx.party.update({
@@ -54,7 +50,6 @@ class VoucherService {
         }
       }
 
-      // 3. Ledger Entry
       await tx.ledgerEntry.create({
         data: {
           voucherId: voucher.id,
@@ -81,10 +76,7 @@ class VoucherService {
 
       const { type, amount, partyId } = voucher;
 
-      // 1. Reverse Party Balance if applicable
       if (partyId) {
-        // Reversing PAYMENT_IN adds amount back (+)
-        // Reversing PAYMENT_OUT subtracts amount (-)
         const reverseDelta = type === 'PAYMENT_IN' ? amount : type === 'PAYMENT_OUT' ? -amount : 0;
         if (reverseDelta !== 0) {
           await tx.party.update({
@@ -94,10 +86,7 @@ class VoucherService {
         }
       }
 
-      // 2. Delete associated Ledger Entries
       await tx.ledgerEntry.deleteMany({ where: { voucherId: id } });
-
-      // 3. Delete Voucher Record
       await tx.voucher.delete({ where: { id } });
 
       return { success: true };
