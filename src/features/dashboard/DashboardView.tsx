@@ -3,10 +3,8 @@ import { useApp } from '../../context/AppContext';
 import { formatCurrency, formatDate } from '../../utils/formatters';
 import {
   TrendingUp,
-  TrendingDown,
   Receipt,
   Wallet,
-  Package,
   Plus,
   ArrowUpRight,
   ArrowDownLeft,
@@ -14,7 +12,7 @@ import {
   Printer,
   MessageCircle,
 } from 'lucide-react';
-import { Party, Invoice, Product } from '../../types';
+import { Party, Invoice } from '../../types';
 
 interface DashboardViewProps {
   onOpenNewBill: () => void;
@@ -70,10 +68,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
   // WhatsApp Reminder Generator
   const sendWhatsAppReminder = (party: Party) => {
+    const phone = party.phone ? party.phone.replace(/\D/g, '') : '';
     const text = `Hello ${party.name}, gentle reminder from ${company.name}. Your pending balance is ${formatCurrency(
       party.balance
     )}. Kindly settle payment via UPI: ${company.upiId || company.phone}. Thank you!`;
-    const url = `https://wa.me/91${party.phone.replace(/\D/g, '')}?text=${encodeURIComponent(text)}`;
+    const url = `https://wa.me/91${phone}?text=${encodeURIComponent(text)}`;
     window.open(url, '_blank');
   };
 

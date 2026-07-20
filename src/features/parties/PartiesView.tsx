@@ -9,7 +9,6 @@ import {
   Phone,
   Building,
   ArrowUpRight,
-  ArrowDownLeft,
   MessageCircle,
   X,
   FileText,
@@ -49,7 +48,7 @@ export const PartiesView: React.FC<PartiesViewProps> = ({
     const matchesType = filterType === 'ALL' || p.type === filterType;
     const matchesSearch =
       p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.phone.includes(searchTerm) ||
+      (p.phone && p.phone.includes(searchTerm)) ||
       (p.companyName && p.companyName.toLowerCase().includes(searchTerm.toLowerCase()));
     return matchesType && matchesSearch;
   });
@@ -118,10 +117,11 @@ export const PartiesView: React.FC<PartiesViewProps> = ({
   ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   const sendWhatsAppReminder = (party: Party) => {
+    const phone = party.phone ? party.phone.replace(/\D/g, '') : '';
     const text = `Hello ${party.name}, gentle reminder from ${company.name}. Your pending balance is ${formatCurrency(
       party.balance
     )}. Kindly settle payment via UPI: ${company.upiId || company.phone}. Thank you!`;
-    const url = `https://wa.me/91${party.phone.replace(/\D/g, '')}?text=${encodeURIComponent(text)}`;
+    const url = `https://wa.me/91${phone}?text=${encodeURIComponent(text)}`;
     window.open(url, '_blank');
   };
 

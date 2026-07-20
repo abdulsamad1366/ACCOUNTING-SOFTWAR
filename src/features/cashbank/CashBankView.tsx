@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { VoucherType } from '../../types';
 import { formatCurrency, formatDate, getTodayDateString } from '../../utils/formatters';
-import { Wallet, Plus, ArrowUpRight, ArrowDownLeft, X, Trash2 } from 'lucide-react';
+import { Wallet, Plus, X, Trash2 } from 'lucide-react';
 
 export const CashBankView: React.FC = () => {
   const { vouchers, addVoucher, deleteVoucher, parties } = useApp();

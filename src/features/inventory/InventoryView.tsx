@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
-import { Product } from '../../types';
 import { formatCurrency } from '../../utils/formatters';
 import { Package, Plus, Search, AlertTriangle, Trash2, X } from 'lucide-react';
 
@@ -28,7 +27,7 @@ export const InventoryView: React.FC<InventoryViewProps> = () => {
     minStockAlert: 10,
   });
 
-  const categories = ['ALL', ...Array.from(new Set(products.map((p) => p.category)))];
+  const categories = ['ALL', ...Array.from(new Set(products.map((p) => p.category || 'General')))];
 
   const filteredProducts = products.filter((p) => {
     const matchesSearch =

@@ -4,6 +4,7 @@ export type InvoiceStatus = 'PAID' | 'UNPAID' | 'PARTIAL' | 'DRAFT' | 'CANCELLED
 export type VoucherType = 'PAYMENT_IN' | 'PAYMENT_OUT' | 'CONTRA' | 'EXPENSE';
 
 export interface Company {
+  id?: string;
   name: string;
   tagline: string;
   phone: string;
@@ -22,19 +23,39 @@ export interface Company {
   terms: string;
 }
 
+export interface User {
+  id: string;
+  username: string;
+  fullName: string;
+  role: 'ADMIN' | 'ACCOUNTANT' | 'VIEWER';
+  status: string;
+}
+
+export interface Category {
+  id: string;
+  name: string;
+  description?: string;
+}
+
+export interface Unit {
+  id: string;
+  name: string;
+  symbol: string;
+}
+
 export interface Party {
   id: string;
   type: PartyType;
   name: string;
-  companyName: string;
-  phone: string;
+  companyName?: string;
+  phone?: string;
   email?: string;
   gstin?: string;
   address?: string;
   city?: string;
   state?: string;
   creditLimit: number;
-  balance: number; // Positive = You Receive (+), Negative = You Pay (-)
+  balance: number; // Positive = Receive (+), Negative = Pay (-)
   createdDate: string;
 }
 
@@ -42,19 +63,23 @@ export interface Product {
   id: string;
   code: string;
   name: string;
-  category: string;
-  unit: string; // Pcs, Kg, Box, Ltr, Mtr
+  category?: string;
+  categoryId?: string;
+  unit?: string;
+  unitId?: string;
+  unitName?: string;
   hsnCode: string;
-  gstRate: number; // e.g. 18, 12, 5, 0
+  gstRate: number;
   salePrice: number;
   purchasePrice: number;
   currentStock: number;
   minStockAlert: number;
   barcode?: string;
+  imageUrl?: string;
 }
 
 export interface InvoiceItem {
-  id: string;
+  id?: string;
   productId: string;
   productName: string;
   hsnCode: string;
@@ -72,7 +97,7 @@ export interface Invoice {
   id: string;
   invoiceNumber: string;
   type: InvoiceType;
-  partyId: string;
+  partyId?: string;
   partyName: string;
   partyPhone?: string;
   partyGstin?: string;
@@ -98,21 +123,73 @@ export interface Voucher {
   date: string;
   partyId?: string;
   partyName?: string;
-  category: string; // Rent, Salary, Tea & Snacks, Utility, Customer Payment, Supplier Payment
+  category: string;
   amount: number;
   paymentMode: 'CASH' | 'HDFC_BANK' | 'ICICI_BANK' | 'UPI';
   referenceNo?: string;
   notes?: string;
 }
 
-export interface StockMovement {
-  id: string;
-  productId: string;
-  productName: string;
-  type: 'IN' | 'OUT' | 'ADJUSTMENT';
-  quantity: number;
-  referenceType: 'SALES' | 'PURCHASE' | 'MANUAL';
-  referenceId: string;
-  date: string;
-  notes?: string;
+export interface TrialBalanceItem {
+  accountName: string;
+  debit: number;
+  credit: number;
+}
+
+export interface FinancialSummary {
+  totalSalesTaxable: number;
+  totalSalesGST: number;
+  totalPurchasesCost: number;
+  totalExpenses: number;
+  grossProfit: number;
+  netProfit: number;
+  totalStockValuation: number;
+  totalReceivables: number;
+  totalPayables: number;
+  productCount: number;
+  partyCount: number;
+  invoiceCount: number;
+}
+
+declare global {
+  interface Window {
+    electronAPI?: {
+      login: (credentials: { username: string; password: string }) => Promise<{ success: boolean; user?: User; message?: string }>;
+      getUsers: () => Promise<User[]>;
+      createUser: (data: Partial<User> & { password: string }) => Promise<User>;
+
+      getCompany: () => Promise<Company>;
+      updateCompany: (data: Company) => Promise<Company>;
+
+      getParties: (type?: PartyType) => Promise<Party[]>;
+      getPartyById: (id: string) => Promise<Party | null>;
+      createParty: (data: Partial<Party>) => Promise<Party>;
+      updateParty: (id: string, data: Partial<Party>) => Promise<Party>;
+      deleteParty: (id: string) => Promise<Party>;
+
+      getProducts: () => Promise<Product[]>;
+      getCategories: () => Promise<Category[]>;
+      getUnits: () => Promise<Unit[]>;
+      createProduct: (data: Partial<Product>) => Promise<Product>;
+      updateProduct: (id: string, data: Partial<Product>) => Promise<Product>;
+      adjustStock: (productId: string, quantity: number, type: 'IN' | 'OUT', notes?: string) => Promise<{ success: boolean; newStock: number }>;
+      deleteProduct: (id: string) => Promise<Product>;
+
+      getInvoices: (type?: InvoiceType) => Promise<Invoice[]>;
+      getInvoiceById: (id: string) => Promise<Invoice | null>;
+      createInvoice: (data: Partial<Invoice>) => Promise<Invoice>;
+      updateInvoiceStatus: (id: string, status: InvoiceStatus, paidAmount?: number) => Promise<Invoice>;
+      deleteInvoice: (id: string) => Promise<Invoice>;
+
+      getVouchers: (type?: VoucherType) => Promise<Voucher[]>;
+      createVoucher: (data: Partial<Voucher>) => Promise<Voucher>;
+      deleteVoucher: (id: string) => Promise<Voucher>;
+
+      getFinancialSummary: () => Promise<FinancialSummary>;
+      getTrialBalance: () => Promise<TrialBalanceItem[]>;
+
+      exportBackupJSON: () => Promise<{ success: boolean; filePath?: string; jsonData?: any }>;
+      importBackupJSON: (jsonString: string | any) => Promise<{ success: boolean }>;
+    };
+  }
 }

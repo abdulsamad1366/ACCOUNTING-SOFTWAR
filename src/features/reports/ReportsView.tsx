@@ -4,7 +4,7 @@ import { formatCurrency } from '../../utils/formatters';
 import { FileBarChart, Printer } from 'lucide-react';
 
 export const ReportsView: React.FC = () => {
-  const { invoices, vouchers, products, parties } = useApp();
+  const { invoices, vouchers, products } = useApp();
 
   // Profit & Loss Calculation
   const totalSalesTaxable = invoices

@@ -16,12 +16,12 @@ export const SettingsView: React.FC = () => {
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = (evt) => {
+    reader.onload = async (evt) => {
       const content = evt.target?.result as string;
       if (content) {
-        const success = importDataJSON(content);
+        const success = await importDataJSON(content);
         if (success) {
-          alert('Database restored successfully from backup JSON file!');
+          alert('Database restored successfully from backup file!');
         }
       }
     };

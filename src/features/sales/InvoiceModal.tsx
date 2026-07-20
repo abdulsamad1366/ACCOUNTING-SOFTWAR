@@ -28,6 +28,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
   const [discount, setDiscount] = useState<number>(0);
   const [paidAmount, setPaidAmount] = useState<number>(0);
   const [notes, setNotes] = useState<string>('');
+  const [isInterstate, setIsInterstate] = useState<boolean>(false);
 
   if (!isOpen) return null;
 
@@ -36,7 +37,21 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
   );
   const selectedParty = parties.find((p) => p.id === selectedPartyId);
 
-  // Add Item Row
+  const calculateItemTotals = (item: InvoiceItem, interstate: boolean = isInterstate) => {
+    const taxable = item.quantity * item.price;
+    const totalGst = (taxable * item.gstRate) / 100;
+    if (interstate) {
+      item.cgstAmount = 0;
+      item.sgstAmount = 0;
+      item.igstAmount = totalGst;
+    } else {
+      item.cgstAmount = totalGst / 2;
+      item.sgstAmount = totalGst / 2;
+      item.igstAmount = 0;
+    }
+    item.total = taxable + totalGst;
+  };
+
   const handleAddItemRow = () => {
     if (products.length === 0) return;
     const defaultProd = products[0];
@@ -46,7 +61,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
       productName: defaultProd.name,
       hsnCode: defaultProd.hsnCode,
       quantity: 1,
-      unit: defaultProd.unit,
+      unit: defaultProd.unitName || defaultProd.unit || 'Pcs',
       price: invoiceType === 'SALES' ? defaultProd.salePrice : defaultProd.purchasePrice,
       gstRate: defaultProd.gstRate,
       cgstAmount: 0,
@@ -54,17 +69,8 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
       igstAmount: 0,
       total: 0,
     };
-    calculateItemTotals(newItem);
+    calculateItemTotals(newItem, isInterstate);
     setItems((prev) => [...prev, newItem]);
-  };
-
-  const calculateItemTotals = (item: InvoiceItem) => {
-    const taxable = item.quantity * item.price;
-    const totalGst = (taxable * item.gstRate) / 100;
-    item.cgstAmount = totalGst / 2;
-    item.sgstAmount = totalGst / 2;
-    item.igstAmount = 0;
-    item.total = taxable + totalGst;
   };
 
   const handleProductChange = (index: number, productId: string) => {
@@ -76,10 +82,10 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
       item.productId = prod.id;
       item.productName = prod.name;
       item.hsnCode = prod.hsnCode;
-      item.unit = prod.unit;
+      item.unit = prod.unitName || prod.unit || 'Pcs';
       item.price = invoiceType === 'SALES' ? prod.salePrice : prod.purchasePrice;
       item.gstRate = prod.gstRate;
-      calculateItemTotals(item);
+      calculateItemTotals(item, isInterstate);
       updated[index] = item;
       return updated;
     });
@@ -89,10 +95,21 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
     setItems((prev) => {
       const updated = [...prev];
       const item = { ...updated[index], [field]: value };
-      calculateItemTotals(item);
+      calculateItemTotals(item, isInterstate);
       updated[index] = item;
       return updated;
     });
+  };
+
+  const handleToggleInterstate = (checked: boolean) => {
+    setIsInterstate(checked);
+    setItems((prev) =>
+      prev.map((item) => {
+        const updated = { ...item };
+        calculateItemTotals(updated, checked);
+        return updated;
+      })
+    );
   };
 
   const handleRemoveItem = (index: number) => {
@@ -103,10 +120,11 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
   const subtotal = items.reduce((sum, item) => sum + item.quantity * item.price, 0);
   const cgstTotal = items.reduce((sum, item) => sum + item.cgstAmount, 0);
   const sgstTotal = items.reduce((sum, item) => sum + item.sgstAmount, 0);
-  const rawGrandTotal = subtotal + cgstTotal + sgstTotal - discount;
+  const igstTotal = items.reduce((sum, item) => sum + item.igstAmount, 0);
+  const rawGrandTotal = subtotal + cgstTotal + sgstTotal + igstTotal - discount;
   const grandTotal = Math.round(rawGrandTotal);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedPartyId) {
       alert('Please select a customer/party');
@@ -117,7 +135,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
       return;
     }
 
-    createInvoice({
+    await createInvoice({
       type: invoiceType,
       partyId: selectedPartyId,
       partyName: selectedParty ? selectedParty.name : 'Cash Sale',
@@ -129,12 +147,13 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
       subtotal,
       cgstTotal,
       sgstTotal,
-      igstTotal: 0,
+      igstTotal,
       discount,
       grandTotal,
       paidAmount: Number(paidAmount) || 0,
       status: Number(paidAmount) >= grandTotal ? 'PAID' : Number(paidAmount) > 0 ? 'PARTIAL' : 'UNPAID',
       notes,
+      isInterstate,
     });
 
     onClose();
@@ -160,7 +179,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
         {/* Modal Form Content */}
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-5">
           {/* Party & Date Row */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1">
                 Select {invoiceType === 'SALES' ? 'Customer' : 'Supplier'} *
@@ -198,6 +217,19 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
                 onChange={(e) => setDueDate(e.target.value)}
                 className="w-full p-2 bg-white border border-slate-300 rounded-lg text-xs font-medium"
               />
+            </div>
+
+            <div className="flex flex-col justify-center">
+              <label className="block text-xs font-semibold text-slate-700 mb-1">Tax Type</label>
+              <label className="inline-flex items-center space-x-2 cursor-pointer mt-1">
+                <input
+                  type="checkbox"
+                  checked={isInterstate}
+                  onChange={(e) => handleToggleInterstate(e.target.checked)}
+                  className="rounded text-blue-600 focus:ring-blue-500 w-4 h-4"
+                />
+                <span className="text-xs font-medium text-slate-800">Interstate (IGST)</span>
+              </label>
             </div>
           </div>
 
@@ -237,7 +269,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
                     </tr>
                   ) : (
                     items.map((item, idx) => (
-                      <tr key={item.id} className="hover:bg-slate-50">
+                      <tr key={item.id || idx} className="hover:bg-slate-50">
                         <td className="p-2">
                           <select
                             value={item.productId}
@@ -308,14 +340,23 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
                 <span>Subtotal (Taxable):</span>
                 <span className="font-mono">{formatCurrency(subtotal)}</span>
               </div>
-              <div className="flex justify-between text-slate-500">
-                <span>CGST:</span>
-                <span className="font-mono">{formatCurrency(cgstTotal)}</span>
-              </div>
-              <div className="flex justify-between text-slate-500">
-                <span>SGST:</span>
-                <span className="font-mono">{formatCurrency(sgstTotal)}</span>
-              </div>
+              {!isInterstate ? (
+                <>
+                  <div className="flex justify-between text-slate-500">
+                    <span>CGST:</span>
+                    <span className="font-mono">{formatCurrency(cgstTotal)}</span>
+                  </div>
+                  <div className="flex justify-between text-slate-500">
+                    <span>SGST:</span>
+                    <span className="font-mono">{formatCurrency(sgstTotal)}</span>
+                  </div>
+                </>
+              ) : (
+                <div className="flex justify-between text-blue-600 font-semibold">
+                  <span>IGST (Interstate):</span>
+                  <span className="font-mono">{formatCurrency(igstTotal)}</span>
+                </div>
+              )}
 
               <div className="flex justify-between items-center pt-2 border-t border-slate-200">
                 <span className="font-bold text-slate-900 text-sm">Grand Total:</span>
