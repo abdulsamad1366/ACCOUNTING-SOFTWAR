@@ -52,6 +52,46 @@ class ReportService {
     };
   }
 
+  async getHsnSummary() {
+    const prisma = getPrismaClient();
+    const items = await prisma.invoiceItem.findMany({
+      include: {
+        invoice: true,
+      },
+    });
+
+    const hsnMap = {};
+
+    items.forEach((item) => {
+      if (!item.invoice || item.invoice.type !== 'SALES') return;
+
+      const key = `${item.hsnCode}_${item.gstRate}`;
+      if (!hsnMap[key]) {
+        hsnMap[key] = {
+          hsnCode: item.hsnCode || 'N/A',
+          gstRate: item.gstRate,
+          totalQty: 0,
+          unit: item.unit || 'Pcs',
+          taxableValue: 0,
+          cgstAmount: 0,
+          sgstAmount: 0,
+          igstAmount: 0,
+          totalTax: 0,
+        };
+      }
+
+      const taxable = item.quantity * item.price;
+      hsnMap[key].totalQty += item.quantity;
+      hsnMap[key].taxableValue += taxable;
+      hsnMap[key].cgstAmount += item.cgstAmount;
+      hsnMap[key].sgstAmount += item.sgstAmount;
+      hsnMap[key].igstAmount += item.igstAmount;
+      hsnMap[key].totalTax += item.cgstAmount + item.sgstAmount + item.igstAmount;
+    });
+
+    return Object.values(hsnMap);
+  }
+
   async getTrialBalance() {
     const prisma = getPrismaClient();
     const ledgerEntries = await prisma.ledgerEntry.findMany({

@@ -42,6 +42,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   // Reports
   getFinancialSummary: () => ipcRenderer.invoke('reports:summary'),
+  getHsnSummary: () => ipcRenderer.invoke('reports:hsnSummary'),
   getTrialBalance: () => ipcRenderer.invoke('reports:trialBalance'),
 
   // Backup

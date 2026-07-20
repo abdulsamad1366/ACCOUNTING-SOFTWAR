@@ -11,12 +11,16 @@ import { InventoryView } from './features/inventory/InventoryView';
 import { CashBankView } from './features/cashbank/CashBankView';
 import { ReportsView } from './features/reports/ReportsView';
 import { SettingsView } from './features/settings/SettingsView';
-import { Invoice, Party } from './types';
+import { LoginModal } from './features/auth/LoginModal';
+import { Invoice, Party, User } from './types';
 
 const AppContent: React.FC = () => {
   const { company, exportDataJSON, toastMessage } = useApp();
   const [activeTab, setActiveTab] = useState<NavTab>('dashboard');
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Authentication State
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
 
   // Modals & Printable view states
   const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
@@ -49,6 +53,10 @@ const AppContent: React.FC = () => {
     setSelectedPartyForBill(party || null);
     setIsInvoiceModalOpen(true);
   };
+
+  if (!currentUser) {
+    return <LoginModal onLoginSuccess={(user) => setCurrentUser(user)} />;
+  }
 
   return (
     <div className="flex h-screen bg-slate-100 overflow-hidden font-sans text-slate-900 select-none">

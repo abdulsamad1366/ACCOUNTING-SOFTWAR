@@ -1,10 +1,51 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { formatCurrency } from '../../utils/formatters';
-import { FileBarChart, Printer } from 'lucide-react';
+import { HsnSummaryItem } from '../../types';
+import { FileBarChart, Printer, Table } from 'lucide-react';
 
 export const ReportsView: React.FC = () => {
   const { invoices, vouchers, products } = useApp();
+  const [hsnSummary, setHsnSummary] = useState<HsnSummaryItem[]>([]);
+
+  useEffect(() => {
+    if (window.electronAPI?.getHsnSummary) {
+      window.electronAPI.getHsnSummary().then((data) => {
+        if (data) setHsnSummary(data);
+      });
+    } else {
+      // Local fallback calculation
+      const hsnMap: Record<string, HsnSummaryItem> = {};
+      invoices
+        .filter((i) => i.type === 'SALES')
+        .forEach((inv) => {
+          inv.items.forEach((item) => {
+            const key = `${item.hsnCode}_${item.gstRate}`;
+            if (!hsnMap[key]) {
+              hsnMap[key] = {
+                hsnCode: item.hsnCode || 'N/A',
+                gstRate: item.gstRate,
+                totalQty: 0,
+                unit: item.unit || 'Pcs',
+                taxableValue: 0,
+                cgstAmount: 0,
+                sgstAmount: 0,
+                igstAmount: 0,
+                totalTax: 0,
+              };
+            }
+            const taxable = item.quantity * item.price;
+            hsnMap[key].totalQty += item.quantity;
+            hsnMap[key].taxableValue += taxable;
+            hsnMap[key].cgstAmount += item.cgstAmount;
+            hsnMap[key].sgstAmount += item.sgstAmount;
+            hsnMap[key].igstAmount += item.igstAmount || 0;
+            hsnMap[key].totalTax += item.cgstAmount + item.sgstAmount + (item.igstAmount || 0);
+          });
+        });
+      setHsnSummary(Object.values(hsnMap));
+    }
+  }, [invoices]);
 
   // Profit & Loss Calculation
   const totalSalesTaxable = invoices
@@ -13,7 +54,7 @@ export const ReportsView: React.FC = () => {
 
   const totalSalesGST = invoices
     .filter((i) => i.type === 'SALES')
-    .reduce((sum, i) => sum + i.cgstTotal + i.sgstTotal, 0);
+    .reduce((sum, i) => sum + i.cgstTotal + i.sgstTotal + i.igstTotal, 0);
 
   const totalPurchasesCost = invoices
     .filter((i) => i.type === 'PURCHASE')
@@ -42,7 +83,7 @@ export const ReportsView: React.FC = () => {
             <FileBarChart className="w-6 h-6 text-blue-600 mr-2" />
             Financial Reports & GST Analytics
           </h1>
-          <p className="text-xs text-slate-500 mt-0.5">Automated Profit & Loss Statement, Stock Valuation, and GST Filing Summary</p>
+          <p className="text-xs text-slate-500 mt-0.5">Automated Profit & Loss Statement, Stock Valuation, and GSTR-1 HSN Summary</p>
         </div>
 
         <button
@@ -126,6 +167,55 @@ export const ReportsView: React.FC = () => {
               <span className="font-mono font-bold text-emerald-700">{formatCurrency(totalStockValuation)}</span>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* GSTR-1 HSN Summary Table Card */}
+      <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-2xs space-y-4">
+        <div className="flex items-center space-x-2 border-b border-slate-200 pb-3">
+          <Table className="w-5 h-5 text-blue-600" />
+          <h2 className="text-base font-bold text-slate-900">
+            GSTR-1 HSN-Wise Tax Summary Table
+          </h2>
+        </div>
+
+        <div className="border border-slate-200 rounded-xl overflow-hidden">
+          <table className="w-full text-left text-xs">
+            <thead>
+              <tr className="bg-slate-900 text-white font-semibold">
+                <th className="py-3 px-3">HSN Code</th>
+                <th className="py-3 px-2 text-center">GST %</th>
+                <th className="py-3 px-2 text-center">Total Qty</th>
+                <th className="py-3 px-3 text-right">Taxable Value (₹)</th>
+                <th className="py-3 px-3 text-right">CGST (₹)</th>
+                <th className="py-3 px-3 text-right">SGST (₹)</th>
+                <th className="py-3 px-3 text-right">IGST (₹)</th>
+                <th className="py-3 px-3 text-right">Total Tax (₹)</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {hsnSummary.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="py-8 text-center text-slate-400">
+                    No HSN sales data available yet.
+                  </td>
+                </tr>
+              ) : (
+                hsnSummary.map((item, idx) => (
+                  <tr key={idx} className="hover:bg-slate-50">
+                    <td className="py-3 px-3 font-mono font-bold text-slate-900">{item.hsnCode}</td>
+                    <td className="py-3 px-2 text-center font-mono text-slate-600">{item.gstRate}%</td>
+                    <td className="py-3 px-2 text-center font-bold">{item.totalQty} {item.unit}</td>
+                    <td className="py-3 px-3 text-right font-mono font-bold text-slate-800">{formatCurrency(item.taxableValue)}</td>
+                    <td className="py-3 px-3 text-right font-mono text-slate-600">{formatCurrency(item.cgstAmount)}</td>
+                    <td className="py-3 px-3 text-right font-mono text-slate-600">{formatCurrency(item.sgstAmount)}</td>
+                    <td className="py-3 px-3 text-right font-mono text-slate-600">{formatCurrency(item.igstAmount)}</td>
+                    <td className="py-3 px-3 text-right font-mono font-bold text-blue-700">{formatCurrency(item.totalTax)}</td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>

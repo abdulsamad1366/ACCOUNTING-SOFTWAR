@@ -121,6 +121,10 @@ function registerIpcHandlers(mainWindow) {
     return await reportService.getFinancialSummary();
   });
 
+  ipcMain.handle('reports:hsnSummary', async () => {
+    return await reportService.getHsnSummary();
+  });
+
   ipcMain.handle('reports:trialBalance', async () => {
     return await reportService.getTrialBalance();
   });

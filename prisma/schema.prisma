@@ -77,6 +77,9 @@ model Party {
   invoices       Invoice[]
   vouchers       Voucher[]
   ledgerEntries  LedgerEntry[]
+
+  @@index([type])
+  @@index([name])
 }
 
 model Product {
@@ -101,6 +104,9 @@ model Product {
 
   invoiceItems   InvoiceItem[]
   stockMovements StockMovement[]
+
+  @@index([code])
+  @@index([name])
 }
 
 model Invoice {
@@ -129,6 +135,10 @@ model Invoice {
 
   items         InvoiceItem[]
   ledgerEntries LedgerEntry[]
+
+  @@index([type])
+  @@index([partyId])
+  @@index([date])
 }
 
 model InvoiceItem {
@@ -147,6 +157,9 @@ model InvoiceItem {
   sgstAmount  Float    @default(0)
   igstAmount  Float    @default(0)
   total       Float
+
+  @@index([invoiceId])
+  @@index([productId])
 }
 
 model Voucher {
@@ -165,6 +178,10 @@ model Voucher {
   createdAt     DateTime @default(now())
 
   ledgerEntries LedgerEntry[]
+
+  @@index([type])
+  @@index([date])
+  @@index([partyId])
 }
 
 model LedgerEntry {
@@ -182,6 +199,10 @@ model LedgerEntry {
   balance     Float    @default(0)
   narration   String?
   createdAt   DateTime @default(now())
+
+  @@index([accountName])
+  @@index([date])
+  @@index([partyId])
 }
 
 model StockMovement {
@@ -195,6 +216,9 @@ model StockMovement {
   date          String
   notes         String?
   createdAt     DateTime @default(now())
+
+  @@index([productId])
+  @@index([date])
 }
 
 model AuditLog {

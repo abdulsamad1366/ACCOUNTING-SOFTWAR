@@ -151,6 +151,18 @@ export interface FinancialSummary {
   invoiceCount: number;
 }
 
+export interface HsnSummaryItem {
+  hsnCode: string;
+  gstRate: number;
+  totalQty: number;
+  unit: string;
+  taxableValue: number;
+  cgstAmount: number;
+  sgstAmount: number;
+  igstAmount: number;
+  totalTax: number;
+}
+
 declare global {
   interface Window {
     electronAPI?: {
@@ -186,6 +198,7 @@ declare global {
       deleteVoucher: (id: string) => Promise<Voucher>;
 
       getFinancialSummary: () => Promise<FinancialSummary>;
+      getHsnSummary: () => Promise<HsnSummaryItem[]>;
       getTrialBalance: () => Promise<TrialBalanceItem[]>;
 
       exportBackupJSON: () => Promise<{ success: boolean; filePath?: string; jsonData?: any }>;
